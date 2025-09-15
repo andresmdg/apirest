@@ -1,4 +1,3 @@
-````md
 # Fastify JSON API
 
 API REST mínima hecha con **Fastify** y un **archivo JSON** como datastore.  
@@ -41,4 +40,3 @@ src/
   app.ts
   services.ts
   main.ts
-```
