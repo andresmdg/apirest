@@ -1,13 +1,13 @@
-````md
 # Documentación – Fastify JSON API
 
 👉 **Objetivo:** construir una API REST para gestionar usuarios.
 
 📋 **Requisitos:**
-- `GET /users` → listar usuarios  
-- `POST /users` → crear usuario (**name**, **email**)  
-- `DELETE /users/:id` → eliminar usuario  
-- Validar emails con formato correcto  
+
+- `GET /users` → listar usuarios
+- `POST /users` → crear usuario (**name**, **email**)
+- `DELETE /users/:id` → eliminar usuario
+- Validar emails con formato correcto
 - Datos guardados en **memoria** (sin BD tradicional). Se persiste en `db/data.json`
 
 ---
@@ -26,18 +26,20 @@ El enfoque es **minimalista**: una base de código pequeña, clara y fácil de e
 - **Fastify App (`createApp`)**  
   Registra CORS, define rutas y schemas de validación. Maneja el error handler global.
 
-- **Service (negocio)**  
-  - Expone métodos como `find`, `findById`, `create`, `deleteById`.  
+- **Service (negocio)**
+  - Expone métodos como `find`, `findById`, `create`, `deleteById`.
   - Aplica reglas de negocio: unicidad de email (verificada en el handler antes de crear), campos requeridos, etc.
 
-- **Database (persistencia simple)**  
-  - Carga `db/data.json` al iniciar y mantiene los datos **en memoria**.  
+- **Database (persistencia simple)**
+  - Carga `db/data.json` al iniciar y mantiene los datos **en memoria**.
   - En operaciones de escritura (crear/eliminar) vuelca la memoria a disco.
   - Ruta del archivo resuelta desde el **CWD** (`db/data.json`).
 
-- **Modelo `User`**  
+- **Modelo `User`**
   ```json
   { "id": 1, "name": "Ada Lovelace", "email": "ada@computing.org" }
+  ```
+
 ````
 
 * `id`: numérico autoincremental generado en el servidor.
@@ -194,3 +196,4 @@ src/
 
 * **OpenAPI (Swagger):** `docs/api.yaml`
 * **Guía ampliada:** `docs/documentation.md` (este archivo)
+````

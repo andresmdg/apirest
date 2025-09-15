@@ -22,7 +22,7 @@ pnpm install
 pnpm run dev      # desarrollo (watch)
 pnpm run build    # compilar a lib/
 pnpm start        # producción (usa lib/)
-````
+```
 
 > Configura el puerto con `PORT` en `.env` (opcional).
 
@@ -40,3 +40,4 @@ src/
   app.ts
   services.ts
   main.ts
+```

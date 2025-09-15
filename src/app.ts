@@ -89,7 +89,10 @@ export function createApp() {
           type: 'object',
           properties: {
             name: { type: 'string', minLength: 1 },
-            email: { type: 'string', pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$' }, // simple email check
+            email: {
+              type: 'string',
+              pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
+            }, // simple email check
           },
           required: ['name', 'email'],
           additionalProperties: false, // disallow extra properties other than name and email
@@ -104,7 +107,10 @@ export function createApp() {
       }
 
       // Sanitizar: aceptar solo name y email del cliente (ignorando "id" si lo mandan)
-      const { name: fullName, email } = req.body as { name: string; email: string }
+      const { name: fullName, email } = req.body as {
+        name: string
+        email: string
+      }
 
       // Asegura que la colección exista y sea array
       const current = service.find(name)
@@ -114,8 +120,11 @@ export function createApp() {
 
       // Unicidad de email (case-insensitive)
       const exists = current.some(
-        u => typeof u === 'object' && u !== null &&
-          String((u as any)['email'] ?? '').toLowerCase() === email.toLowerCase()
+        u =>
+          typeof u === 'object' &&
+          u !== null &&
+          String((u as any)['email'] ?? '').toLowerCase() ===
+            email.toLowerCase()
       )
       if (exists) {
         return reply.code(409).send({ error: 'Email already registered' })

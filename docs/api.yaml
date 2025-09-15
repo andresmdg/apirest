@@ -11,7 +11,7 @@ servers:
     description: Local server
     variables:
       port:
-        default: "205"
+        default: '205'
         description: Port where the server is listening
 
 tags:
@@ -25,19 +25,19 @@ paths:
       summary: Health check
       operationId: getHealth
       responses:
-        "200":
+        '200':
           description: Service is running
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthResponse"
+                $ref: '#/components/schemas/HealthResponse'
               examples:
                 ok:
                   value:
                     success: true
                     message: Server works
-        "500":
-          $ref: "#/components/responses/Error500"
+        '500':
+          $ref: '#/components/responses/Error500'
 
   /users:
     get:
@@ -45,24 +45,24 @@ paths:
       summary: List users
       operationId: listUsers
       responses:
-        "200":
+        '200':
           description: Array of users
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/User"
+                  $ref: '#/components/schemas/User'
               examples:
                 example:
                   value:
                     - id: 1
                       name: Kevin
                       email: kevin@email.com
-        "404":
-          $ref: "#/components/responses/Error404"
-        "500":
-          $ref: "#/components/responses/Error500"
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
 
     post:
       tags: [Users]
@@ -73,44 +73,44 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewUser"
+              $ref: '#/components/schemas/NewUser'
             examples:
               ok:
                 value:
                   name: Ada Lovelace
                   email: ada@computing.org
       responses:
-        "201":
+        '201':
           description: User created
           headers:
             Location:
-              $ref: "#/components/headers/Location"
+              $ref: '#/components/headers/Location'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: '#/components/schemas/User'
               examples:
                 created:
                   value:
                     id: 2
                     name: Ada Lovelace
                     email: ada@computing.org
-        "400":
-          $ref: "#/components/responses/Error400"
-        "409":
+        '400':
+          $ref: '#/components/responses/Error400'
+        '409':
           description: Email already registered
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: '#/components/schemas/Error'
               examples:
                 conflict:
                   value:
                     error: Email already registered
-        "404":
-          $ref: "#/components/responses/Error404"
-        "500":
-          $ref: "#/components/responses/Error500"
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
 
   /users/{id}:
     parameters:
@@ -126,34 +126,34 @@ paths:
       summary: Get user by id
       operationId: getUserById
       responses:
-        "200":
+        '200':
           description: A single user
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
+                $ref: '#/components/schemas/User'
               examples:
                 example:
                   value:
                     id: 1
                     name: Kevin
                     email: kevin@email.com
-        "404":
-          $ref: "#/components/responses/Error404"
-        "500":
-          $ref: "#/components/responses/Error500"
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
 
     delete:
       tags: [Users]
       summary: Delete user by id
       operationId: deleteUser
       responses:
-        "200":
+        '200':
           description: Deleted user payload
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DeletedUserResponse"
+                $ref: '#/components/schemas/DeletedUserResponse'
               examples:
                 deleted:
                   value:
@@ -162,10 +162,10 @@ paths:
                       id: 2
                       name: Ada Lovelace
                       email: ada@computing.org
-        "404":
-          $ref: "#/components/responses/Error404"
-        "500":
-          $ref: "#/components/responses/Error500"
+        '404':
+          $ref: '#/components/responses/Error404'
+        '500':
+          $ref: '#/components/responses/Error500'
 
 components:
   headers:
@@ -225,7 +225,7 @@ components:
           type: boolean
           example: true
         deleted:
-          $ref: "#/components/schemas/User"
+          $ref: '#/components/schemas/User'
 
     Error:
       type: object
@@ -241,7 +241,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
           examples:
             badRequest:
               value:
@@ -251,7 +251,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
           examples:
             notFound:
               value:
@@ -261,7 +261,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
           examples:
             internal:
               value:
