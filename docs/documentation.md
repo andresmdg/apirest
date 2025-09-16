@@ -28,11 +28,12 @@ The API is designed as a **simple CRUD service** with an in-memory data store.
 ```
 
 src/
-└── app.ts        # Main Fastify application (routes + logic)
+|–– main.ts       # Entry point to run the application
+└── app.ts        # Fastify application (routes + logic)
 README.md          # Project introduction & usage guide
 documentation.md   # Technical documentation
 
-````
+```
 
 ---
 
@@ -44,7 +45,7 @@ documentation.md   # Technical documentation
 - **Response**:
   ```json
   { "success": true, "message": "Server works" }
-````
+  ```
 
 ---
 
@@ -179,5 +180,4 @@ app.setErrorHandler((err, _req, reply) => {
 * Replace in-memory array with a **database**
 * Add **update endpoint** (`PUT /users/:id`)
 * Implement **pagination** in `GET /users`
-* Add **unit tests** with [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/)
-* Introduce **Swagger/OpenAPI documentation**
+* Add **unit tests** with [Jest](https://jestjs.io/)

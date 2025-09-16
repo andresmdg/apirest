@@ -1,26 +1,30 @@
 # Fastify Users API
 
-A simple **REST API** built with [Fastify](https://fastify.dev/) and TypeScript.  
-This project demonstrates how to structure routes, validate requests, and manage data using an **in-memory collection** (no database required).  
+A simple **REST API** built with [Fastify](https://fastify.dev/) and TypeScript.
+This project demonstrates how to structure routes, validate requests, and manage data using an **in-memory collection** (no database required).
+
+> Check the [docs](docs/documentation.md) for more information or the [API](docs/api.yaml) to get the Swagger documentation.
 
 ---
 
 ## 🚀 Features
-- Fast and lightweight server using **Fastify**
-- **CORS enabled** (for browser or external client access)
-- **Input validation** with JSON schema
-- Basic **CRUD operations** on a `users` collection
-- **Global error handler** for consistent error responses
-- Clear code comments for beginners
+
+* Fast and lightweight server using **Fastify**
+* **CORS enabled** (for browser or external client access)
+* **Input validation** with JSON Schema
+* Basic **CRUD operations** on a `users` collection
+* **Global error handler** for consistent error responses
+* Clear code comments for beginners
 
 ---
 
 ## 📦 Installation
 
 1. Clone the repository:
+
    ```bash
-   git clone https://github.com/your-username/fastify-users-api.git
-   cd fastify-users-api
+   git clone https://github.com/andresmdg/apirest.git
+   cd apirest
    ```
 
 2. Install dependencies:
@@ -47,11 +51,11 @@ This project demonstrates how to structure routes, validate requests, and manage
 ## ⚙️ Environment Variables
 
 This project uses [dotenv](https://www.npmjs.com/package/dotenv).
-Create a `.env` file in the root if you want to configure custom values.
+Create a `.env` file in the root directory if you want to configure custom values.
 
-| Variable | Default | Description           |
-| -------- | ------- | --------------------- |
-| `PORT`   | `3000`  | Server listening port |
+| Variable | Default | Description                |
+| -------- | ------- | -------------------------- |
+| `PORT`   | `3001`  | Port where the server runs |
 
 ---
 
@@ -60,7 +64,7 @@ Create a `.env` file in the root if you want to configure custom values.
 ### 1. Health Check
 
 **GET /**
-Check if the service is up and running.
+Checks if the service is up and running.
 
 ```bash
 curl -X GET http://localhost:3001/
@@ -69,7 +73,7 @@ curl -X GET http://localhost:3001/
 Response:
 
 ```json
-{ "success": true, "message": "Server works" }
+{ "success": true, "message": "Server is running" }
 ```
 
 ---
@@ -77,7 +81,7 @@ Response:
 ### 2. List Users
 
 **GET /users**
-Retrieve all users (returns an empty array if none exist).
+Retrieves all users (returns an empty array if none exist).
 
 ```bash
 curl -X GET http://localhost:3001/users
@@ -94,7 +98,7 @@ Response:
 ### 3. Create User
 
 **POST /users**
-Add a new user to the collection.
+Adds a new user to the collection.
 
 ```bash
 curl -X POST http://localhost:3001/users \
@@ -123,7 +127,7 @@ If the email is already registered:
 ### 4. Delete User
 
 **DELETE /users/\:id**
-Remove a user by their ID.
+Removes a user by their ID.
 
 ```bash
 curl -X DELETE http://localhost:3001/users/1
@@ -155,4 +159,4 @@ If the user does not exist:
 * Data is stored in memory → restarting the server will reset the user list.
 * The `Location` header in `POST /users` points to the new resource URL.
 * Validation ensures only valid **name** and **email** fields are accepted.
-* This project is meant as a **learning starter template** for beginners.
+* This project is intended as a **learning starter template** for beginners.
