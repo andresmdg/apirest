@@ -63,7 +63,7 @@ Create a `.env` file in the root if you want to configure custom values.
 Check if the service is up and running.
 
 ```bash
-curl -X GET http://localhost:3000/
+curl -X GET http://localhost:3001/
 ```
 
 Response:
@@ -80,7 +80,7 @@ Response:
 Retrieve all users (returns an empty array if none exist).
 
 ```bash
-curl -X GET http://localhost:3000/users
+curl -X GET http://localhost:3001/users
 ```
 
 Response:
@@ -97,7 +97,7 @@ Response:
 Add a new user to the collection.
 
 ```bash
-curl -X POST http://localhost:3000/users \
+curl -X POST http://localhost:3001/users \
   -H "Content-Type: application/json" \
   -d '{"name":"Alice","email":"alice@example.com"}'
 ```
@@ -126,7 +126,7 @@ If the email is already registered:
 Remove a user by their ID.
 
 ```bash
-curl -X DELETE http://localhost:3000/users/1
+curl -X DELETE http://localhost:3001/users/1
 ```
 
 Successful response:
