@@ -1,199 +1,183 @@
-# Documentación – Fastify JSON API
+# 📖 Project Documentation
 
-👉 **Objetivo:** construir una API REST para gestionar usuarios.
-
-📋 **Requisitos:**
-
-- `GET /users` → listar usuarios
-- `POST /users` → crear usuario (**name**, **email**)
-- `DELETE /users/:id` → eliminar usuario
-- Validar emails con formato correcto
-- Datos guardados en **memoria** (sin BD tradicional). Se persiste en `db/data.json`
+This document provides a deeper explanation of the **Fastify Users API**, including architecture, code structure, validation, error handling, and extension guidelines.  
 
 ---
 
-## Desarrollo
+## 🏗️ Architecture Overview
 
-Elegí **Fastify** por su **ligereza**, **alto rendimiento**, validación de **esquemas** integrada (JSON Schema), serialización JSON eficiente, ecosistema maduro de plugins y porque es ampliamente usado en entornos laborales modernos.  
-El enfoque es **minimalista**: una base de código pequeña, clara y fácil de extender, evitando duplicar lógica de CRUD por ruta. La lógica de negocio vive en un **Service** único y la persistencia simple en una **Database** que lee/escribe un archivo JSON. Esto reduce fricción al crear nuevas rutas y mantiene el proyecto escalable sin complejidad innecesaria.
+The API is designed as a **simple CRUD service** with an in-memory data store.  
 
-> Nota: este **no** es un proyecto real de producción. Si lo fuera, deberíamos considerar seguridad, rendimiento, observabilidad, concurrencia, caching, despliegue, testing, etc. (ver sección “Consideraciones para producción”).
+- **Framework**: [Fastify](https://fastify.dev/)  
+- **Language**: TypeScript  
+- **Data store**: In-memory array (`users`)  
+- **Schema validation**: JSON Schema (built-in with Fastify)  
+- **Error handling**: Global error handler  
 
----
-
-## Arquitectura
-
-- **Fastify App (`createApp`)**  
-  Registra CORS, define rutas y schemas de validación. Maneja el error handler global.
-
-- **Service (negocio)**
-  - Expone métodos como `find`, `findById`, `create`, `deleteById`.
-  - Aplica reglas de negocio: unicidad de email (verificada en el handler antes de crear), campos requeridos, etc.
-
-- **Database (persistencia simple)**
-  - Carga `db/data.json` al iniciar y mantiene los datos **en memoria**.
-  - En operaciones de escritura (crear/eliminar) vuelca la memoria a disco.
-  - Ruta del archivo resuelta desde el **CWD** (`db/data.json`).
-
-- **Modelo `User`**
-  ```json
-  { "id": 1, "name": "Ada Lovelace", "email": "ada@computing.org" }
-  ```
-
-````
-
-* `id`: numérico autoincremental generado en el servidor.
-* `name`: string obligatorio.
-* `email`: string con patrón simple de email y **único** (case-insensitive).
+**Flow of a Request**:
+1. Client sends HTTP request (e.g., `GET /users`)
+2. Fastify matches the route handler
+3. Request is validated against JSON schema (if provided)
+4. Business logic runs (create, read, delete, etc.)
+5. Response is returned with appropriate status code and JSON body
 
 ---
 
-## Flujo de petición
-
-1. **Fastify** recibe la solicitud y valida `params`/`body` con **JSON Schema**.
-2. El **handler** consulta/llama a **Service**.
-3. **Service** lee/escribe sobre los datos en memoria; **Database** persiste a `db/data.json` cuando corresponde.
-4. El **handler** construye la respuesta (códigos adecuados: 200/201/404/409/400).
-5. El **error handler** captura excepciones y responde `500` estándar.
-
----
-
-## Endpoints
-
-> La especificación completa está en **`docs/api.yaml`** (OpenAPI/Swagger).
-> A continuación, un resumen práctico.
-
-### Health
-
-**GET /** → 200
-
-```json
-{ "success": true, "message": "Server works" }
-```
-
-### Users
-
-#### Listar usuarios
-
-**GET /users** → 200
-
-```json
-[
-  { "id": 1, "name": "Kevin", "email": "kevin@email.com" }
-]
-```
-
-**404** cuando no existe la colección `users` en el JSON.
-
-#### Obtener usuario por id (opcional si se expone)
-
-**GET /users/\:id** → 200
-
-```json
-{ "id": 1, "name": "Kevin", "email": "kevin@email.com" }
-```
-
-→ 404 si no existe.
-
-#### Crear usuario
-
-**POST /users**
-Body:
-
-```json
-{ "name": "Ada Lovelace", "email": "ada@computing.org" }
-```
-
-* `required`: `name`, `email`
-* `additionalProperties: false` → rechaza extras (p. ej., `id`)
-* **unicidad de email**: 409 si ya existe
-
-**201 Created**
-
-```json
-{ "id": 2, "name": "Ada Lovelace", "email": "ada@computing.org" }
-```
-
-Header: `Location: /users/2`
-
-**400** body inválido • **409** email duplicado • **404** colección inexistente
-
-#### Eliminar usuario
-
-**DELETE /users/\:id** → 200
-
-```json
-{
-  "success": true,
-  "deleted": { "id": 2, "name": "Ada Lovelace", "email": "ada@computing.org" }
-}
-```
-
-→ 404 si no existe
-
----
-
-## Ejemplos cURL
-
-```bash
-# Health
-curl http://localhost:205/
-
-# Listar
-curl http://localhost:205/users
-
-# Por id
-curl http://localhost:205/users/1
-
-# Crear (válido)
-curl -X POST http://localhost:205/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Ada Lovelace","email":"ada@computing.org"}'
-
-# Crear (rechaza extra "id")
-curl -X POST http://localhost:205/users \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Ada","email":"ada@computing.org","id":1}'
-
-# Eliminar
-curl -X DELETE http://localhost:205/users/2
-```
-
----
-
-## Estructura del proyecto (resumen)
+## 📂 File Structure
 
 ```
-db/
-  data.json
-docs/
-  api.yaml
-  documentation.md
+
 src/
-  app.ts           # rutas + schemas + plugins
-  services.ts      # Service + Database
-  main.ts          # bootstrap (listen)
+└── app.ts        # Main Fastify application (routes + logic)
+README.md          # Project introduction & usage guide
+documentation.md   # Technical documentation
+
+````
+
+---
+
+## 🧩 Route Details
+
+### Health Check
+- **Endpoint**: `GET /`
+- **Purpose**: Verify the service is running
+- **Response**:
+  ```json
+  { "success": true, "message": "Server works" }
+````
+
+---
+
+### List Users
+
+* **Endpoint**: `GET /users`
+* **Purpose**: Retrieve all users
+* **Validation**: None (simple request)
+* **Response**:
+
+  * **200 OK**
+
+    ```json
+    []
+    ```
+
+    or
+
+    ```json
+    [{ "id": 1, "name": "Alice", "email": "alice@example.com" }]
+    ```
+
+---
+
+### Create User
+
+* **Endpoint**: `POST /users`
+* **Purpose**: Add a new user
+* **Validation**:
+
+  ```json
+  {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string", "minLength": 1 },
+      "email": {
+        "type": "string",
+        "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+      }
+    },
+    "required": ["name", "email"],
+    "additionalProperties": false
+  }
+  ```
+* **Responses**:
+
+  * **201 Created**
+
+    ```json
+    { "id": 1, "name": "Alice", "email": "alice@example.com" }
+    ```
+  * **409 Conflict**
+
+    ```json
+    { "error": "Email already registered" }
+    ```
+
+---
+
+### Delete User
+
+* **Endpoint**: `DELETE /users/:id`
+* **Purpose**: Remove a user by ID
+* **Validation**:
+
+  ```json
+  {
+    "type": "object",
+    "properties": { "id": { "type": "string", "pattern": "^[0-9]+$" } },
+    "required": ["id"]
+  }
+  ```
+* **Responses**:
+
+  * **200 OK**
+
+    ```json
+    {
+      "success": true,
+      "deleted": { "id": 1, "name": "Alice", "email": "alice@example.com" }
+    }
+    ```
+  * **404 Not Found**
+
+    ```json
+    { "error": "User not found" }
+    ```
+
+---
+
+## ⚠️ Error Handling
+
+All unexpected errors are handled globally:
+
+```ts
+app.setErrorHandler((err, _req, reply) => {
+  app.log.error(err)
+  reply.code(500).send({ error: 'An error has occurred' })
+})
 ```
 
----
-
-## Consideraciones para producción (futuras)
-
-* **Seguridad**: headers, helmet, sanitización, ocultar detalles de errores, límites de tamaño de body.
-* **Rate limiting** y **circuit breakers**.
-* **Autenticación/autorización** (JWT/API Keys, RBAC).
-* **Paginación** en `GET /users`.
-* **Observabilidad**: logs estructurados, trazas, métricas (Prometheus), dashboard.
-* **Concurrencia y consistencia**: locks/colas si hay múltiples réplicas escribiendo el JSON.
-* **Cache**: ETag/Last-Modified, `Cache-Control`, reverse proxy (NGINX/Cloudflare).
-* **CI/CD y testing**: unit/E2E, cobertura, linters, hooks pre-commit.
-* **Empaquetado**: Docker, multi-stage build; variables de entorno seguras.
-* **Base de datos real**: cuando la escala/consistencia lo exija.
+* Ensures the API **never leaks stack traces** to the client
+* Provides consistent JSON error format
 
 ---
 
-## Referencias
+## 🧑‍💻 Development Guidelines
 
-* **OpenAPI (Swagger):** `docs/api.yaml`
-* **Guía ampliada:** `docs/documentation.md` (este archivo)
-````
+1. **Adding new routes**
+
+   * Define route in `createApp()` function
+   * Add **validation schema** to ensure safe input
+   * Always return **clear and consistent JSON responses**
+
+2. **Extending data storage**
+
+   * Current version uses an **in-memory array** (`users`)
+   * For persistence, replace with a real database (e.g., PostgreSQL, MongoDB)
+   * Keep route logic the same; just abstract data operations into a service layer
+
+3. **Best practices**
+
+   * Use **async/await** for all async operations
+   * Always validate client input
+   * Provide meaningful HTTP status codes (`200`, `201`, `404`, `409`, `500`)
+   * Keep routes **RESTful** and resource-oriented
+
+---
+
+## 🔮 Future Improvements
+
+* Replace in-memory array with a **database**
+* Add **update endpoint** (`PUT /users/:id`)
+* Implement **pagination** in `GET /users`
+* Add **unit tests** with [Jest](https://jestjs.io/) or [Vitest](https://vitest.dev/)
+* Introduce **Swagger/OpenAPI documentation**
