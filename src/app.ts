@@ -68,6 +68,63 @@ export function createApp() {
     }
   )
 
+  // Update an user information by ID
+  app.put(
+    '/users/:id',
+    {
+      // Validate "id" param to ensure it's numeric and body for allowed fields
+      schema: {
+        params: {
+          type: 'object',
+          properties: { id: { type: 'string', pattern: '^[0-9]+$' } },
+          required: ['id'],
+        },
+        body: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', minLength: 1 },
+            email: {
+              type: 'string',
+              pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$', // simple email regex
+            },
+          },
+          additionalProperties: false, // reject unexpected fields
+        },
+      },
+    },
+    async (req, reply) => {
+      const id = Number((req.params as { id: string }).id)
+      const { name, email } = req.body as {
+        name?: string
+        email?: string
+      }
+
+      // Find the user by ID
+      const user = users.find(u => u.id === id)
+      if (!user) {
+        // If user not found, return 404
+        return reply.code(404).send({ error: 'User not found' })
+      }
+
+      // If email is being updated, check for duplicates (case insensitive)
+      if (
+        email &&
+        users.some(
+          u => u.id !== id && u.email.toLowerCase() === email.toLowerCase()
+        )
+      ) {
+        return reply.code(409).send({ error: 'Email already registered' })
+      }
+
+      // Update only provided fields
+      if (name !== undefined) user.name = name
+      if (email !== undefined) user.email = email
+
+      // Return the updated user
+      return reply.code(200).send(user)
+    }
+  )
+
   // DELETE /users/:id → Remove a user by ID
   app.delete(
     '/users/:id',

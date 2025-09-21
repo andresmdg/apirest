@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: >
     A simple REST API built with Fastify and TypeScript.  
-    Provides CRUD operations for a `users` collection (stored in memory).  
+    Provides CRUD operations for a `users` collection (stored in memory).
 
 servers:
   - url: http://localhost:3001
@@ -124,6 +124,53 @@ paths:
               example:
                 error: User not found
 
+    put:
+      summary: Update a user by ID
+      description: Update an existing user's information (name and/or email).
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+            example:
+              name: Alice
+              email: alicenewmail@example.com
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+              example:
+                id: 1
+                name: Alice
+                email: alicenewmail@example.com
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: User not found
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Email already registered
+
 components:
   schemas:
     User:
@@ -153,6 +200,19 @@ components:
       required:
         - name
         - email
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Alice
+        email:
+          type: string
+          format: email
+          example: alicenewmail@example.com
+      additionalProperties: false
 
     Error:
       type: object

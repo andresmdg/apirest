@@ -9,12 +9,12 @@ This project demonstrates how to structure routes, validate requests, and manage
 
 ## 🚀 Features
 
-* Fast and lightweight server using **Fastify**
-* **CORS enabled** (for browser or external client access)
-* **Input validation** with JSON Schema
-* Basic **CRUD operations** on a `users` collection
-* **Global error handler** for consistent error responses
-* Clear code comments for beginners
+- Fast and lightweight server using **Fastify**
+- **CORS enabled** (for browser or external client access)
+- **Input validation** with JSON Schema
+- Basic **CRUD operations** on a `users` collection
+- **Global error handler** for consistent error responses
+- Clear code comments for beginners
 
 ---
 
@@ -154,9 +154,32 @@ If the user does not exist:
 
 ---
 
+### 5. Update User Information
+
+**PUT /users/:id**  
+Updates a user's information by ID.
+
+```bash
+curl -X PUT http://localhost:3001/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alicenewmail@example.com"}'
+```
+
+Successful response:
+
+```json
+{
+  "id": 1,
+  "name": "Alice",
+  "email": "alicenewmail@example.com"
+}
+```
+
+---
+
 ## 🧑‍💻 Development Notes
 
-* Data is stored in memory → restarting the server will reset the user list.
-* The `Location` header in `POST /users` points to the new resource URL.
-* Validation ensures only valid **name** and **email** fields are accepted.
-* This project is intended as a **learning starter template** for beginners.
+- Data is stored in memory → restarting the server will reset the user list.
+- The `Location` header in `POST /users` points to the new resource URL.
+- Validation ensures only valid **name** and **email** fields are accepted.
+- This project is intended as a **learning starter template** for beginners.
