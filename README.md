@@ -1,20 +1,25 @@
 # Fastify Users API
 
 A simple **REST API** built with [Fastify](https://fastify.dev/) and TypeScript.
-This project demonstrates how to structure routes, validate requests, and manage data using an **in-memory collection** (no database required).
+This project demonstrates how to structure routes, validate requests, and manage data using an **in-memory collection**, following **SOLID principles** and **Clean Architecture** practices.
 
-> Check the [docs](docs/documentation.md) for more information or the [API](docs/api.yaml) to get the Swagger documentation.
+> Check the [documentation](docs/documentation.md) or the [API spec](docs/api.json) for full details.
 
 ---
 
 ## 🚀 Features
 
-- Fast and lightweight server using **Fastify**
-- **CORS enabled** (for browser or external client access)
-- **Input validation** with JSON Schema
-- Basic **CRUD operations** on a `users` collection
-- **Global error handler** for consistent error responses
-- Clear code comments for beginners
+* Fast and lightweight server using **Fastify**
+* **CORS enabled** for browser or external client access
+* **Input validation** with JSON Schema:
+
+  * Reject negative or zero IDs
+  * Limit IDs to **3 digits**
+  * Maximum **999 users** allowed
+* **CRUD operations** for `users` collection
+* **Consistent standardized responses** using `ApiResponse<T>` for all routes
+* **Global error handler** ensures consistent JSON errors
+* Clear code comments and maintainable structure
 
 ---
 
@@ -64,7 +69,7 @@ Create a `.env` file in the root directory if you want to configure custom value
 ### 1. Health Check
 
 **GET /**
-Checks if the service is up and running.
+Checks if the service is up.
 
 ```bash
 curl -X GET http://localhost:3001/
@@ -73,7 +78,11 @@ curl -X GET http://localhost:3001/
 Response:
 
 ```json
-{ "success": true, "message": "Server is running" }
+{
+  "success": true,
+  "message": "Server works",
+  "data": null
+}
 ```
 
 ---
@@ -81,16 +90,32 @@ Response:
 ### 2. List Users
 
 **GET /users**
-Retrieves all users (returns an empty array if none exist).
+Retrieves all users.
 
 ```bash
 curl -X GET http://localhost:3001/users
 ```
 
-Response:
+Response (empty):
 
 ```json
-[]
+{
+  "success": true,
+  "message": "List of users",
+  "data": []
+}
+```
+
+Response (with users):
+
+```json
+{
+  "success": true,
+  "message": "List of users",
+  "data": [
+    { "id": 1, "name": "Alice", "email": "alice@example.com" }
+  ]
+}
 ```
 
 ---
@@ -98,7 +123,7 @@ Response:
 ### 3. Create User
 
 **POST /users**
-Adds a new user to the collection.
+Adds a new user. Maximum **999 users** allowed.
 
 ```bash
 curl -X POST http://localhost:3001/users \
@@ -110,16 +135,36 @@ Successful response:
 
 ```json
 {
-  "id": 1,
-  "name": "Alice",
-  "email": "alice@example.com"
+  "success": true,
+  "message": "User created successfully",
+  "data": { "id": 1, "name": "Alice", "email": "alice@example.com" }
 }
 ```
 
-If the email is already registered:
+Errors:
 
 ```json
-{ "error": "Email already registered" }
+{
+  "success": false,
+  "message": "Conflict",
+  "error": "Email already registered"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Bad Request",
+  "error": "Cannot register more users: memory limit reached"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Bad Request",
+  "error": "User ID exceeds maximum allowed value"
+}
 ```
 
 ---
@@ -127,7 +172,7 @@ If the email is already registered:
 ### 4. Delete User
 
 **DELETE /users/\:id**
-Removes a user by their ID.
+Removes a user by their ID. Rejects invalid or negative IDs.
 
 ```bash
 curl -X DELETE http://localhost:3001/users/1
@@ -138,25 +183,34 @@ Successful response:
 ```json
 {
   "success": true,
-  "deleted": {
-    "id": 1,
-    "name": "Alice",
-    "email": "alice@example.com"
-  }
+  "message": "User deleted successfully",
+  "data": { "id": 1, "name": "Alice", "email": "alice@example.com" }
 }
 ```
 
-If the user does not exist:
+Errors:
 
 ```json
-{ "error": "User not found" }
+{
+  "success": false,
+  "message": "Not Found",
+  "error": "Resource not found"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Bad Request",
+  "error": "Invalid user ID"
+}
 ```
 
 ---
 
 ### 5. Update User Information
 
-**PUT /users/:id**  
+**PUT /users/\:id**
 Updates a user's information by ID.
 
 ```bash
@@ -169,9 +223,35 @@ Successful response:
 
 ```json
 {
-  "id": 1,
-  "name": "Alice",
-  "email": "alicenewmail@example.com"
+  "success": true,
+  "message": "User updated successfully",
+  "data": { "id": 1, "name": "Alice", "email": "alicenewmail@example.com" }
+}
+```
+
+Errors:
+
+```json
+{
+  "success": false,
+  "message": "Not Found",
+  "error": "Resource not found"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Conflict",
+  "error": "Email already registered"
+}
+```
+
+```json
+{
+  "success": false,
+  "message": "Bad Request",
+  "error": "Invalid user ID"
 }
 ```
 
@@ -179,7 +259,9 @@ Successful response:
 
 ## 🧑‍💻 Development Notes
 
-- Data is stored in memory → restarting the server will reset the user list.
-- The `Location` header in `POST /users` points to the new resource URL.
-- Validation ensures only valid **name** and **email** fields are accepted.
-- This project is intended as a **learning starter template** for beginners.
+* Data is stored in memory → restarting the server resets all users.
+* Validation ensures only valid **name**, **email**, and **ID** are accepted.
+* Maximum **999 users** to prevent memory overload.
+* All responses follow the **`ApiResponse<T>` schema** for consistency.
+* Code follows **SOLID principles** and **Clean Architecture**, making it easy to extend.
+* This project serves as a **learning starter template** with proper error handling and validation.

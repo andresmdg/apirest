@@ -5,163 +5,137 @@ import 'dotenv/config'
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 
+// Response manager
+import { User, CreateUserDto, UpdateUserDto } from './type.js'
+import {
+  ok,
+  created,
+  notfound,
+  conflict,
+  servererror,
+  badrequest,
+} from './response.js'
+
+// Services and schemas
+import {
+  validateId,
+  isEmailTaken,
+  hasReachedUserLimit,
+} from './user.service.js'
+import {
+  idParamSchema,
+  createUserSchema,
+  updateUserSchema,
+} from './user.schema.js'
+
 // In-memory data store (resets every time the server restarts)
-let users: { id: number; name: string; email: string }[] = []
+let users: User[] = []
 let nextId = 1 // simple auto-increment ID generator
 
 // Factory function to create the Fastify application
 export function createApp() {
   const app = Fastify({ logger: true }) // logger prints requests and errors
 
-  // Enable CORS so the API can be consumed from browsers or external clients
+  // Enable CORS for external clients
   app.register(cors, { origin: true })
 
-  // Health check route (useful for monitoring or quick status tests)
-  app.get('/', async () => ({ success: true, message: 'Server works' }))
+  // Health check route
+  app.get('/', async (_req, reply) => ok(reply, null, 'Server works'))
 
   // -----------------------
   // USERS COLLECTION ROUTES
   // -----------------------
 
   // GET /users → List all users
-  app.get('/users', async (_req, reply) => {
-    // Always return an array (empty if there are no users)
-    return reply.code(200).send(users)
-  })
+  app.get('/users', async (_req, reply) => ok(reply, users, 'List of users'))
 
   // POST /users → Create a new user
   app.post(
     '/users',
-    {
-      // Validation schema using Fastify built-in JSON schema
-      schema: {
-        body: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', minLength: 1 },
-            email: {
-              type: 'string',
-              pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$', // simple email regex
-            },
-          },
-          required: ['name', 'email'],
-          additionalProperties: false, // reject unexpected fields
-        },
-      },
-    },
+    { schema: { body: createUserSchema } },
     async (req, reply) => {
-      // Extract only allowed properties from request body
-      const { name, email } = req.body as { name: string; email: string }
+      const { name, email } = req.body as CreateUserDto
 
-      // Check for duplicate email (case insensitive)
-      if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-        return reply.code(409).send({ error: 'Email already registered' })
+      // 🔹 Check maximum users limit
+      if (hasReachedUserLimit(users)) {
+        return badrequest(
+          reply,
+          'Cannot register more users: memory limit reached'
+        )
       }
 
-      // Create a new user object and add it to the in-memory collection
-      const newUser = { id: nextId++, name, email }
+      // 🔹 Check for duplicate email
+      if (isEmailTaken(users, email)) {
+        return conflict(reply, 'Email already registered')
+      }
+
+      // 🔹 Create user and validate ID
+      const newUser: User = { id: nextId++, name, email }
+      if (!validateId(newUser.id)) {
+        return badrequest(reply, 'User ID exceeds maximum allowed value')
+      }
+
       users.push(newUser)
 
-      // Return "201 Created" with Location header pointing to the new resource
+      // 🔹 Return standardized created response
       reply.header('Location', `/users/${newUser.id}`)
-      return reply.code(201).send(newUser)
+      return created(reply, newUser, 'User created successfully')
     }
   )
 
-  // Update an user information by ID
+  // PUT /users/:id → Update a user
   app.put(
     '/users/:id',
-    {
-      // Validate "id" param to ensure it's numeric and body for allowed fields
-      schema: {
-        params: {
-          type: 'object',
-          properties: { id: { type: 'string', pattern: '^[0-9]+$' } },
-          required: ['id'],
-        },
-        body: {
-          type: 'object',
-          properties: {
-            name: { type: 'string', minLength: 1 },
-            email: {
-              type: 'string',
-              pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$', // simple email regex
-            },
-          },
-          additionalProperties: false, // reject unexpected fields
-        },
-      },
-    },
+    { schema: { params: idParamSchema, body: updateUserSchema } },
     async (req, reply) => {
-      const id = Number((req.params as { id: string }).id)
-      const { name, email } = req.body as {
-        name?: string
-        email?: string
-      }
+      const { id } = req.params as { id: number }
+      const { name, email } = req.body as UpdateUserDto
 
-      // Find the user by ID
+      // 🔹 Validate ID
+      if (!validateId(id)) return badrequest(reply, 'Invalid user ID')
+
       const user = users.find(u => u.id === id)
-      if (!user) {
-        // If user not found, return 404
-        return reply.code(404).send({ error: 'User not found' })
+      if (!user) return notfound(reply, 'User not found')
+
+      // 🔹 Check for duplicate email when updating
+      if (email && isEmailTaken(users, email, id)) {
+        return conflict(reply, 'Email already registered')
       }
 
-      // If email is being updated, check for duplicates (case insensitive)
-      if (
-        email &&
-        users.some(
-          u => u.id !== id && u.email.toLowerCase() === email.toLowerCase()
-        )
-      ) {
-        return reply.code(409).send({ error: 'Email already registered' })
-      }
-
-      // Update only provided fields
+      // 🔹 Update fields
       if (name !== undefined) user.name = name
       if (email !== undefined) user.email = email
 
-      // Return the updated user
-      return reply.code(200).send(user)
+      return ok(reply, user, 'User updated successfully')
     }
   )
 
-  // DELETE /users/:id → Remove a user by ID
+  // DELETE /users/:id → Remove a user
   app.delete(
     '/users/:id',
-    {
-      // Validate "id" param to ensure it's numeric
-      schema: {
-        params: {
-          type: 'object',
-          properties: { id: { type: 'string', pattern: '^[0-9]+$' } },
-          required: ['id'],
-        },
-      },
-    },
+    { schema: { params: idParamSchema } },
     async (req, reply) => {
-      const id = Number((req.params as { id: string }).id)
+      const { id } = req.params as { id: number }
 
-      // Find the index of the user in the array
+      if (!validateId(id)) return badrequest(reply, 'Invalid user ID')
+
       const index = users.findIndex(u => u.id === id)
+      if (index === -1) return notfound(reply, 'User not found')
 
-      if (index === -1) {
-        // If user not found, return 404
-        return reply.code(404).send({ error: 'User not found' })
-      }
-
-      // Remove user from array and return it in the response
       const [deleted] = users.splice(index, 1)
-      return reply.code(200).send({ success: true, deleted })
+      return ok(reply, deleted, 'User deleted successfully')
     }
   )
 
   // -----------------------
   // GLOBAL ERROR HANDLER
   // -----------------------
-  // Catches unhandled errors and prevents repeating try/catch blocks everywhere
   app.setErrorHandler((err, _req, reply) => {
+    // 🔹 Log the error for debugging
     app.log.error(err)
-    reply.code(500).send({ error: 'An error has occurred' })
+
+    // 🔹 Return standardized internal server error response
+    return servererror(reply, err.message)
   })
 
   return { app }
