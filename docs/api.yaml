@@ -3,8 +3,8 @@ info:
   title: Fastify Users API
   version: 1.0.0
   description: >
-    A simple REST API built with Fastify and TypeScript.  
-    Provides CRUD operations for a `users` collection (stored in memory).  
+    A simple REST API built with Fastify and TypeScript.
+    Provides CRUD operations for a `users` collection (stored in memory) with standardized responses.
 
 servers:
   - url: http://localhost:3001
@@ -27,9 +27,15 @@ paths:
                     type: boolean
                   message:
                     type: string
-              example:
-                success: true
-                message: Server works
+                  data:
+                    type: object
+                    nullable: true
+              examples:
+                success:
+                  value:
+                    success: true
+                    message: Server works
+                    data: null
 
   /users:
     get:
@@ -41,26 +47,40 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-              example:
-                - id: 1
-                  name: Alice
-                  email: alice@example.com
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+              examples:
+                sample:
+                  value:
+                    success: true
+                    message: List of users
+                    data:
+                      - id: 1
+                        name: Alice
+                        email: alice@example.com
 
     post:
       summary: Create a new user
-      description: Add a user to the collection.
+      description: Add a user to the collection (maximum 999 users).
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/UserInput'
-            example:
-              name: Alice
-              email: alice@example.com
+            examples:
+              sample:
+                value:
+                  name: Alice
+                  email: alice@example.com
       responses:
         '201':
           description: User created successfully
@@ -72,19 +92,40 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-              example:
-                id: 1
-                name: Alice
-                email: alice@example.com
+                $ref: '#/components/schemas/ApiResponseUser'
+              examples:
+                sample:
+                  value:
+                    success: true
+                    message: User created successfully
+                    data:
+                      id: 1
+                      name: Alice
+                      email: alice@example.com
+        '400':
+          description: Bad request (invalid input or maximum users reached)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                sample:
+                  value:
+                    success: false
+                    message: Bad Request
+                    error: Cannot register more users: memory limit reached
         '409':
           description: Email already registered
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: Email already registered
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                sample:
+                  value:
+                    success: false
+                    message: Conflict
+                    error: Email already registered
 
   /users/{id}:
     delete:
@@ -103,26 +144,114 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  deleted:
-                    $ref: '#/components/schemas/User'
-              example:
-                success: true
-                deleted:
-                  id: 1
-                  name: Alice
-                  email: alice@example.com
+                $ref: '#/components/schemas/ApiResponseUser'
+              examples:
+                sample:
+                  value:
+                    success: true
+                    message: User deleted successfully
+                    data:
+                      id: 1
+                      name: Alice
+                      email: alice@example.com
+        '400':
+          description: Invalid user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                sample:
+                  value:
+                    success: false
+                    message: Bad Request
+                    error: Invalid user ID
         '404':
           description: User not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: User not found
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                sample:
+                  value:
+                    success: false
+                    message: Not Found
+                    error: User not found
+
+    put:
+      summary: Update a user by ID
+      description: Update an existing user's information (name and/or email).
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: Numeric ID of the user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+            examples:
+              sample:
+                value:
+                  name: Alice
+                  email: alicenewmail@example.com
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseUser'
+              examples:
+                sample:
+                  value:
+                    success: true
+                    message: User updated successfully
+                    data:
+                      id: 1
+                      name: Alice
+                      email: alicenewmail@example.com
+        '400':
+          description: Invalid user ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                sample:
+                  value:
+                    success: false
+                    message: Bad Request
+                    error: Invalid user ID
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                sample:
+                  value:
+                    success: false
+                    message: Not Found
+                    error: User not found
+        '409':
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseError'
+              examples:
+                sample:
+                  value:
+                    success: false
+                    message: Conflict
+                    error: Email already registered
 
 components:
   schemas:
@@ -145,6 +274,7 @@ components:
         name:
           type: string
           minLength: 1
+          maxLength: 50
           example: Alice
         email:
           type: string
@@ -154,10 +284,36 @@ components:
         - name
         - email
 
-    Error:
+    UserUpdate:
       type: object
       properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: Alice
+        email:
+          type: string
+          format: email
+          example: alicenewmail@example.com
+      additionalProperties: false
+
+    ApiResponseUser:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/User'
+
+    ApiResponseError:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
         error:
           type: string
-      example:
-        error: Something went wrong
